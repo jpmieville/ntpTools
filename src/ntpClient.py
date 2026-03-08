@@ -29,10 +29,16 @@ from typing import Optional, Tuple
 
 # Default NTP servers
 DEFAULT_SERVERS = [
-    "129.132.2.21",   # swisstime.ethz.ch
-    "0.pool.ntp.org",
-    "time.google.com",
-    "time.cloudflare.com",
+	"0.pool.ntp.org",
+	"swisstime.ethz.ch",
+	"time.apple.com",
+	"time.cloudflare.com",
+	"time.google.com",
+	"time.nist.gov",
+	"time.windows.com",
+    "ntp.metas.ch",
+    "ntp.ubuntu.com",
+	"217.147.223.78",  # swisstime.ethz.ch
 ]
 
 # NTP Constants

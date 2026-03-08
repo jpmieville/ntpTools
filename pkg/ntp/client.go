@@ -93,17 +93,23 @@ var modeText = map[uint8]string{
 }
 
 var stratumText = map[uint8]string{
-	0: "unspecified or unavailable",
-	1: "primary reference (e.g. radio clock)",
-	2: "2...15: secondary reference (via NTP or SNTP)",
+	0:  "unspecified or unavailable",
+	1:  "primary reference (e.g. radio clock)",
+	2:  "2...15: secondary reference (via NTP or SNTP)",
 	16: "16...255: reserved",
 }
 
 var DefaultServers = []string{
-	"129.132.2.21", // swisstime.ethz.ch
 	"0.pool.ntp.org",
-	"time.google.com",
+	"ntp.metas.ch",
+	"ntp.ubuntu.com",
+	"swisstime.ethz.ch",
+	"time.apple.com",
 	"time.cloudflare.com",
+	"time.google.com",
+	"time.nist.gov",
+	"time.windows.com",
+	"217.147.223.78", // swisstime.ethz.ch
 }
 
 var Verbose bool
