@@ -340,6 +340,7 @@ func main() {
 	timeout := flag.Duration("timeout", ntpTimeout, "Socket timeout")
 	listServers := flag.Bool("list-servers", false, "List available default NTP servers")
 	jsonOutput := flag.Bool("json", false, "Output result as JSON")
+	compactOutput := flag.Bool("compact", false, "Output compact single-line JSON (implies -json)")
 	flag.BoolVar(&verbose, "verbose", false, "Enable verbose debug output")
 	flag.Parse()
 
@@ -359,9 +360,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if *jsonOutput {
+	if *jsonOutput || *compactOutput {
 		enc := json.NewEncoder(os.Stdout)
-		enc.SetIndent("", "  ")
+		if !*compactOutput {
+			enc.SetIndent("", "  ")
+		}
 		if err := enc.Encode(result); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)

@@ -44,6 +44,9 @@ python src/ntpClient.py -l
 
 # Output as JSON
 python src/ntpClient.py --json time.google.com
+
+# Compact single-line JSON (for piping)
+python src/ntpClient.py --compact time.google.com
 ```
 
 ### Go
@@ -67,6 +70,9 @@ go run src/ntpClient.go -verbose -server ch01dc201
 # Output as JSON
 go run src/ntpClient.go -json -server time.google.com
 
+# Compact single-line JSON (for piping)
+go run src/ntpClient.go -compact -server time.google.com
+
 # List available servers
 go run src/ntpClient.go -list-servers
 ```
@@ -82,6 +88,7 @@ go run src/ntpClient.go -list-servers
 | `-t, --timeout` | Socket timeout in seconds | 20.0 |
 | `-l, --list-servers` | List available default servers | - |
 | `--json` | Output result as JSON | - |
+| `--compact` | Compact single-line JSON (implies --json) | - |
 
 ### Go
 
@@ -92,6 +99,7 @@ go run src/ntpClient.go -list-servers
 | `-timeout` | Socket timeout | 20s |
 | `-list-servers` | List available default servers | - |
 | `-json` | Output result as JSON | - |
+| `-compact` | Compact single-line JSON (implies -json) | - |
 | `-verbose` | Enable verbose debug output | - |
 
 ## Default NTP Servers

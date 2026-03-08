@@ -342,6 +342,12 @@ Examples:
         help="Output result as JSON"
     )
 
+    parser.add_argument(
+        "--compact",
+        action="store_true",
+        help="Output compact single-line JSON (implies --json)"
+    )
+
     return parser.parse_args()
 
 
@@ -365,8 +371,9 @@ def main() -> int:
     result = client.fetch_time()
 
     if result:
-        if args.json:
-            print(json.dumps(asdict(result), indent=2))
+        if args.json or args.compact:
+            indent = None if args.compact else 2
+            print(json.dumps(asdict(result), indent=indent))
         else:
             client.print_result(result)
         return 0
