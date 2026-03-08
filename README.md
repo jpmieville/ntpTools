@@ -1,5 +1,7 @@
 # NTP Tools
 
+[![CI](https://github.com/jpmieville/ntpTools/actions/workflows/ci.yml/badge.svg)](https://github.com/jpmieville/ntpTools/actions/workflows/ci.yml)
+
 SNTP (Simple Network Time Protocol) client tools for retrieving time from NTP servers.
 
 ## Overview
