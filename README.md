@@ -141,6 +141,30 @@ The web server provides:
 | `time.nist.gov` | NIST (National Institute of Standards & Technology) | USA | 1 |
 | `time.windows.com` | Microsoft | Global | 3 |
 
+## Docker
+
+A multi-stage [`Dockerfile`](Dockerfile) is included to build and run the web server in a minimal `scratch` image.
+
+### Build
+
+```bash
+docker build -t ntptools-web .
+```
+
+### Run
+
+```bash
+docker run --rm -p 8080:8080 ntptools-web
+```
+
+Then open [http://localhost:8080](http://localhost:8080) in your browser.
+
+### Custom address/port
+
+```bash
+docker run --rm -p 9090:9090 ntptools-web -addr :9090
+```
+
 ## Output Example
 
 ```

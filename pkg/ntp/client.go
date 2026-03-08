@@ -102,7 +102,6 @@ var stratumText = map[uint8]string{
 var DefaultServers = []string{
 	"0.pool.ntp.org",
 	"ntp.metas.ch",
-<<<<<<< HEAD
 	"ntp.ubuntu.com",
 	"swisstime.ethz.ch",
 	"time.apple.com",
@@ -110,14 +109,6 @@ var DefaultServers = []string{
 	"time.google.com",
 	"time.nist.gov",
 	"time.windows.com",
-=======
-	"swisstime.ethz.ch",
-	"time.windows.com",
-	"time.apple.com",
-	"time.nist.gov",
-	"time.google.com",
-	"time.cloudflare.com",
->>>>>>> refs/remotes/origin/master
 	"217.147.223.78", // swisstime.ethz.ch
 }
 
