@@ -174,4 +174,4 @@ GOOS=windows GOARCH=amd64 go build -o ntpClient.exe src/ntpClient.go
 
 ## License
 
-See project files for license information.
+This project is licensed under the [MIT License](LICENSE).
