@@ -30,7 +30,6 @@ from typing import Optional, Tuple
 # Default NTP servers
 DEFAULT_SERVERS = [
 	"0.pool.ntp.org",
-<<<<<<< HEAD
 	"swisstime.ethz.ch",
 	"time.apple.com",
 	"time.cloudflare.com",
@@ -39,15 +38,6 @@ DEFAULT_SERVERS = [
 	"time.windows.com",
     "ntp.metas.ch",
     "ntp.ubuntu.com",
-=======
-    "ntp.metas.ch",
-	"swisstime.ethz.ch",
-	"time.windows.com",
-	"time.apple.com",
-	"time.nist.gov",
-	"time.google.com",
-	"time.cloudflare.com",
->>>>>>> refs/remotes/origin/master
 	"217.147.223.78",  # swisstime.ethz.ch
 ]
 

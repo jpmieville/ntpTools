@@ -131,10 +131,15 @@ The web server provides:
 
 ## Default NTP Servers
 
-- `129.132.2.21` (swisstime.ethz.ch)
-- `0.pool.ntp.org`
-- `time.google.com`
-- `time.cloudflare.com`
+| Server | Provider | Region | Stratum |
+|---|---|---|---|
+| `129.132.2.21` | ETH Zürich (`swisstime.ethz.ch`) | Switzerland | 1 |
+| `ntp.metas.ch` | METAS (Swiss Federal Institute of Metrology) | Switzerland | 1 |
+| `0.pool.ntp.org` | NTP Pool Project | Global | 2+ |
+| `time.google.com` | Google Public NTP | Global | 1 |
+| `time.cloudflare.com` | Cloudflare NTP | Global | 3 |
+| `time.nist.gov` | NIST (National Institute of Standards & Technology) | USA | 1 |
+| `time.windows.com` | Microsoft | Global | 3 |
 
 ## Output Example
 
