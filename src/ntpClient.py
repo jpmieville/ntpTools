@@ -23,6 +23,7 @@ import socket
 import struct
 import sys
 import time
+from dataclasses import asdict, dataclass
 from typing import Optional, Tuple
 
 
@@ -38,6 +39,36 @@ DEFAULT_SERVERS = [
 NTP_PORT = 123
 NTP_TIMEOUT = 20.0
 TIME1970 = 2208988800  # Seconds between 1900 and 1970
+
+
+@dataclass
+class NTPAddress:
+    """Resolved server address."""
+    ip: str
+    port: int
+
+
+@dataclass
+class NTPResult:
+    """Parsed and computed results of an NTP query."""
+    server: str
+    address: NTPAddress
+    leap_indicator: int
+    version: int
+    mode: int
+    stratum: int
+    poll: int
+    precision: int
+    root_delay: int
+    root_dispersion: int
+    reference_id: str
+    reference_time: float
+    originate_time: float
+    receive_time: float
+    transmit_time: float
+    destination_time: float
+    clock_offset: float
+    roundtrip_delay: float
 
 
 class NTPClient:
@@ -133,12 +164,12 @@ class NTPClient:
         """Convert NTP timestamp to Unix epoch."""
         return integer + (fraction / 2**32) - TIME1970
 
-    def fetch_time(self) -> Optional[dict]:
+    def fetch_time(self) -> Optional[NTPResult]:
         """
         Fetch time from the NTP server.
 
         Returns:
-            Dictionary containing time information, or None if failed
+            NTPResult containing time information, or None if failed
         """
         message = self._create_ntp_request()
         originate_time = time.time()
@@ -171,7 +202,7 @@ class NTPClient:
     def _parse_response(
         self, data: bytes, address: Tuple[str, int],
         originate_time: float, destination_time: float
-    ) -> dict:
+    ) -> NTPResult:
         """Parse the NTP response packet."""
         # Unpack the response (format: !2B2b2i4s8I)
         # ! = network byte order, B = unsigned char, b = signed char, i = int32, s = string, I = unsigned int32
@@ -208,59 +239,59 @@ class NTPClient:
         ) / 2.0
         roundtrip_delay = (destination_time - originate_time) - (receive_time - transmit_time)
 
-        return {
-            "server": self.server,
-            "address": address,
-            "leap_indicator": li,
-            "version": vn,
-            "mode": mode,
-            "stratum": stratum,
-            "poll": poll,
-            "precision": precision,
-            "root_delay": root_delay,
-            "root_dispersion": root_dispersion,
-            "reference_id": ref_id,
-            "reference_time": reference_time,
-            "originate_time": originate_time,
-            "receive_time": receive_time,
-            "transmit_time": transmit_time,
-            "destination_time": destination_time,
-            "clock_offset": clock_offset,
-            "roundtrip_delay": roundtrip_delay,
-        }
+        return NTPResult(
+            server=self.server,
+            address=NTPAddress(ip=address[0], port=address[1]),
+            leap_indicator=li,
+            version=vn,
+            mode=mode,
+            stratum=stratum,
+            poll=poll,
+            precision=precision,
+            root_delay=root_delay,
+            root_dispersion=root_dispersion,
+            reference_id=ref_id,
+            reference_time=reference_time,
+            originate_time=originate_time,
+            receive_time=receive_time,
+            transmit_time=transmit_time,
+            destination_time=destination_time,
+            clock_offset=clock_offset,
+            roundtrip_delay=roundtrip_delay,
+        )
 
-    def print_result(self, result: dict) -> None:
+    def print_result(self, result: NTPResult) -> None:
         """Print the NTP time result in a formatted way."""
         print()
-        print(f"Response received from : {result['server']}")
-        print(f"IP address             : {result['address'][0]}")
-        print(f"Port                   : {result['address'][1]}")
+        print(f"Response received from : {result.server}")
+        print(f"IP address             : {result.address.ip}")
+        print(f"Port                   : {result.address.port}")
         print()
         print("Header")
         print("-" * 50)
-        print(f"Byte1                  : 0x{result['leap_indicator'] << 6 | result['version'] << 3 | result['mode']:02X}")
-        print(f"  Leap Indicator (LI)  : {result['leap_indicator']} [{self.LEAP_INDICATOR[result['leap_indicator']]}]")
-        print(f"  Version number (VN)  : {result['version']} [NTP/SNTP version number]")
-        print(f"  Mode                 : {result['mode']} [{self.MODE[result['mode']]}]")
-        print(f"Stratum                : {result['stratum']} [{self.STRATUM[result['stratum']]}]")
-        print(f"Poll interval          : {result['poll']}")
-        print(f"Clock Precision        : 2**{result['precision']} = {2 ** result['precision']:.5E}")
-        print(f"Root Delay             : 0x{result['root_delay']:08X} = {result['root_delay'] / 2**16:.5f}")
-        print(f"Root Dispersion        : 0x{result['root_dispersion']:08X} = {result['root_dispersion'] / 2**16:.5f}")
-        print(f"Reference Identifier   : {result['reference_id']}")
+        print(f"Byte1                  : 0x{result.leap_indicator << 6 | result.version << 3 | result.mode:02X}")
+        print(f"  Leap Indicator (LI)  : {result.leap_indicator} [{self.LEAP_INDICATOR[result.leap_indicator]}]")
+        print(f"  Version number (VN)  : {result.version} [NTP/SNTP version number]")
+        print(f"  Mode                 : {result.mode} [{self.MODE[result.mode]}]")
+        print(f"Stratum                : {result.stratum} [{self.STRATUM[result.stratum]}]")
+        print(f"Poll interval          : {result.poll}")
+        print(f"Clock Precision        : 2**{result.precision} = {2 ** result.precision:.5E}")
+        print(f"Root Delay             : 0x{result.root_delay:08X} = {result.root_delay / 2**16:.5f}")
+        print(f"Root Dispersion        : 0x{result.root_dispersion:08X} = {result.root_dispersion / 2**16:.5f}")
+        print(f"Reference Identifier   : {result.reference_id}")
         print()
         print("Interpreted results (Unix epoch):")
         print("-" * 50)
-        print(f"Reference Timestamp    : {result['reference_time']:.5f} [last sync of server clock]")
-        print(f"Originate Timestamp    : {result['originate_time']:.5f} [request sent by client]")
-        print(f"Receive   Timestamp    : {result['receive_time']:.5f} [request received by server]")
-        print(f"Transmit  Timestamp    : {result['transmit_time']:.5f} [reply sent by server]")
-        print(f"Destination Timestamp  : {result['destination_time']:.5f} [reply received by client]")
+        print(f"Reference Timestamp    : {result.reference_time:.5f} [last sync of server clock]")
+        print(f"Originate Timestamp    : {result.originate_time:.5f} [request sent by client]")
+        print(f"Receive   Timestamp    : {result.receive_time:.5f} [request received by server]")
+        print(f"Transmit  Timestamp    : {result.transmit_time:.5f} [reply sent by server]")
+        print(f"Destination Timestamp  : {result.destination_time:.5f} [reply received by client]")
         print("-" * 50)
         print()
-        print(f"Net Time UTC           : {time.ctime(result['receive_time'])} + {result['receive_time'] % 1 * 1000:.3f} ms")
-        print(f"Clock Offset           : {result['clock_offset']:.5f} seconds")
-        print(f"Roundtrip Delay        : {result['roundtrip_delay']:.5f} seconds")
+        print(f"Net Time UTC           : {time.ctime(result.receive_time)} + {result.receive_time % 1 * 1000:.3f} ms")
+        print(f"Clock Offset           : {result.clock_offset:.5f} seconds")
+        print(f"Roundtrip Delay        : {result.roundtrip_delay:.5f} seconds")
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -335,12 +366,7 @@ def main() -> int:
 
     if result:
         if args.json:
-            json_result = dict(result)
-            json_result["address"] = {
-                "ip": result["address"][0],
-                "port": result["address"][1],
-            }
-            print(json.dumps(json_result, indent=2))
+            print(json.dumps(asdict(result), indent=2))
         else:
             client.print_result(result)
         return 0
