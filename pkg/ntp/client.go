@@ -100,10 +100,15 @@ var stratumText = map[uint8]string{
 }
 
 var DefaultServers = []string{
-	"129.132.2.21", // swisstime.ethz.ch
 	"0.pool.ntp.org",
+	"ntp.metas.ch",
+	"swisstime.ethz.ch",
+	"time.windows.com",
+	"time.apple.com",
+	"time.nist.gov",
 	"time.google.com",
 	"time.cloudflare.com",
+	"217.147.223.78", // swisstime.ethz.ch
 }
 
 var Verbose bool
