@@ -55,28 +55,28 @@ python src/ntpClient.py --compact time.google.com
 
 ```bash
 # Use default server
-go run src/ntpClient.go
+go run ./cmd/ntpclient
 
 # Use specific NTP server
-go run src/ntpClient.go -server time.google.com
+go run ./cmd/ntpclient -server time.google.com
 
 # Use NTP version 3
-go run src/ntpClient.go -version 3 0.pool.ntp.org
+go run ./cmd/ntpclient -version 3 0.pool.ntp.org
 
 # Custom timeout
-go run src/ntpClient.go -timeout 10s ntp.metas.ch
+go run ./cmd/ntpclient -timeout 10s ntp.metas.ch
 
 # Verbose debug output
-go run src/ntpClient.go -verbose -server ch01dc201
+go run ./cmd/ntpclient -verbose -server ch01dc201
 
 # Output as JSON
-go run src/ntpClient.go -json -server time.google.com
+go run ./cmd/ntpclient -json -server time.google.com
 
 # Compact single-line JSON (for piping)
-go run src/ntpClient.go -compact -server time.google.com
+go run ./cmd/ntpclient -compact -server time.google.com
 
 # List available servers
-go run src/ntpClient.go -list-servers
+go run ./cmd/ntpclient -list-servers
 ```
 
 ## Command-Line Options
@@ -157,7 +157,7 @@ python3 -m unittest src.test_ntpClient -v
 ### Go
 
 ```bash
-go test -v ./src/
+go test -v ./cmd/ntpclient/
 ```
 
 ## Building
@@ -166,10 +166,10 @@ go test -v ./src/
 
 ```bash
 # Build for current platform
-go build -o ntpClient src/ntpClient.go
+go build -o ntpClient ./cmd/ntpclient
 
 # Build for Windows
-GOOS=windows GOARCH=amd64 go build -o ntpClient.exe src/ntpClient.go
+GOOS=windows GOARCH=amd64 go build -o ntpClient.exe ./cmd/ntpclient
 ```
 
 ## License

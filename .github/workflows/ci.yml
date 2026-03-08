@@ -19,7 +19,7 @@ jobs:
           go-version: "1.22"
 
       - name: Run tests
-        run: go test -v ./src/
+        run: go test -v ./cmd/ntpclient/
 
   python-tests:
     name: Python Tests
