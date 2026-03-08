@@ -97,9 +97,12 @@ go build -o ntpweb ./cmd/ntpweb
 Then open [http://localhost:8080](http://localhost:8080) in your browser.
 
 The web server provides:
+
 - `GET /` — serves the embedded web UI
 - `GET /api/ntp?server=time.google.com&version=4` — returns NTP result as JSON
 - `GET /api/servers` — returns the list of default NTP servers
+
+![Web server interface](webserver.png)
 
 ## Command-Line Options
 
