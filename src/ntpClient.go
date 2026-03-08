@@ -160,7 +160,7 @@ func unixFloat64(t time.Time) float64 {
 }
 
 // FetchTime fetches time from the NTP server
-func (c *NTPClient) FetchTime() (*map[string]interface{}, error) {
+func (c *NTPClient) FetchTime() (map[string]interface{}, error) {
 	message := c.createNTPRequest()
 
 	if verbose {
@@ -192,6 +192,9 @@ func (c *NTPClient) FetchTime() (*map[string]interface{}, error) {
 		fmt.Printf("[DEBUG] Sending NTP request (version %d)...\n", c.version)
 	}
 
+	// Record originate time before sending request
+	originateTime := time.Now()
+
 	// Send request
 	written, err := conn.Write(message)
 	if err != nil {
@@ -209,12 +212,12 @@ func (c *NTPClient) FetchTime() (*map[string]interface{}, error) {
 		return nil, fmt.Errorf("failed to receive response: %w", err)
 	}
 
+	// Record destination time after receiving response
+	destinationTime := time.Now()
+
 	if verbose {
 		fmt.Printf("[DEBUG] Received %d bytes\n", n)
 	}
-
-	destinationTime := time.Now()
-	originateTime := time.Now()
 
 	// Parse response
 	return c.parseResponse(response, addr, originateTime, destinationTime)
@@ -226,7 +229,7 @@ func (c *NTPClient) parseResponse(
 	addr *net.UDPAddr,
 	originateTime time.Time,
 	destinationTime time.Time,
-) (*map[string]interface{}, error) {
+) (map[string]interface{}, error) {
 	buf := bytes.NewReader(data)
 	var packet ntpPacket
 	err := binary.Read(buf, binary.BigEndian, &packet)
@@ -279,7 +282,7 @@ func (c *NTPClient) parseResponse(
 		"roundtrip_delay":  roundtripDelay,
 	}
 
-	return &result, nil
+	return result, nil
 }
 
 // PrintResult prints the NTP time result in a formatted way
@@ -359,5 +362,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	client.PrintResult(*result)
+	client.PrintResult(result)
 }
