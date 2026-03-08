@@ -38,26 +38,36 @@ type ntpPacket struct {
 	XmitTimeFrac uint32
 }
 
+// NTPAddress holds the resolved server address.
+type NTPAddress struct {
+	IP   string `json:"ip"`
+	Port int    `json:"port"`
+}
+
+func (a NTPAddress) String() string {
+	return fmt.Sprintf("%s:%d", a.IP, a.Port)
+}
+
 // NTPResult holds the parsed and computed results of an NTP query.
 type NTPResult struct {
-	Server          string  `json:"server"`
-	Address         string  `json:"address"`
-	LeapIndicator   uint8   `json:"leap_indicator"`
-	Version         uint8   `json:"version"`
-	Mode            uint8   `json:"mode"`
-	Stratum         uint8   `json:"stratum"`
-	Poll            int8    `json:"poll"`
-	Precision       int8    `json:"precision"`
-	RootDelay       uint32  `json:"root_delay"`
-	RootDispersion  uint32  `json:"root_dispersion"`
-	ReferenceID     string  `json:"reference_id"`
-	ReferenceTime   float64 `json:"reference_time"`
-	OriginateTime   float64 `json:"originate_time"`
-	ReceiveTime     float64 `json:"receive_time"`
-	TransmitTime    float64 `json:"transmit_time"`
-	DestinationTime float64 `json:"destination_time"`
-	ClockOffset     float64 `json:"clock_offset"`
-	RoundtripDelay  float64 `json:"roundtrip_delay"`
+	Server          string     `json:"server"`
+	Address         NTPAddress `json:"address"`
+	LeapIndicator   uint8      `json:"leap_indicator"`
+	Version         uint8      `json:"version"`
+	Mode            uint8      `json:"mode"`
+	Stratum         uint8      `json:"stratum"`
+	Poll            int8       `json:"poll"`
+	Precision       int8       `json:"precision"`
+	RootDelay       uint32     `json:"root_delay"`
+	RootDispersion  uint32     `json:"root_dispersion"`
+	ReferenceID     string     `json:"reference_id"`
+	ReferenceTime   float64    `json:"reference_time"`
+	OriginateTime   float64    `json:"originate_time"`
+	ReceiveTime     float64    `json:"receive_time"`
+	TransmitTime    float64    `json:"transmit_time"`
+	DestinationTime float64    `json:"destination_time"`
+	ClockOffset     float64    `json:"clock_offset"`
+	RoundtripDelay  float64    `json:"roundtrip_delay"`
 }
 
 // NTPClient represents an SNTP client.
@@ -257,8 +267,8 @@ func (c *NTPClient) parseResponse(
 		(receiveTime - transmitTime)
 
 	result := &NTPResult{
-		Server:          c.server,
-		Address:         addr.String(),
+		Server:  c.server,
+		Address: NTPAddress{IP: addr.IP.String(), Port: addr.Port},
 		LeapIndicator:   li,
 		Version:         vn,
 		Mode:            mode,
@@ -284,7 +294,7 @@ func (c *NTPClient) parseResponse(
 func (c *NTPClient) PrintResult(result *NTPResult) {
 	fmt.Println()
 	fmt.Printf("Response received from : %s\n", result.Server)
-	fmt.Printf("IP address             : %s\n", result.Address)
+	fmt.Printf("IP address             : %s\n", result.Address.String())
 	fmt.Println()
 	fmt.Println("Header")
 	fmt.Println("--------------------------------------------------")
