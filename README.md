@@ -134,6 +134,22 @@ Clock Offset           :    0.10830 seconds
 Roundtrip Delay        :    0.00001 seconds
 ```
 
+## Testing
+
+Both implementations include unit tests covering packet parsing, time conversion, and clock offset/roundtrip delay calculations.
+
+### Python
+
+```bash
+python3 -m unittest src.test_ntpClient -v
+```
+
+### Go
+
+```bash
+go test -v ./src/
+```
+
 ## Building
 
 ### Go Binary
