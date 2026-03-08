@@ -145,11 +145,13 @@ class NTPClient:
         try:
             socket.setdefaulttimeout(self.timeout)
             client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            client.sendto(message, (self.server, NTP_PORT))
+            try:
+                client.sendto(message, (self.server, NTP_PORT))
 
-            data, address = client.recvfrom(1024)
-            destination_time = time.time()
-            client.close()
+                data, address = client.recvfrom(1024)
+                destination_time = time.time()
+            finally:
+                client.close()
 
             return self._parse_response(
                 data, address, originate_time, destination_time
