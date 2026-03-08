@@ -15,7 +15,8 @@ This project provides NTP client implementations in both Python and Go, based on
 - Calculate clock offset and roundtrip delay
 - Support for NTP versions 3 and 4
 - Configurable timeout
-- Verbose debug output (Go version)
+- Verbose debug output (Go CLI)
+- **Web interface** — browser-based NTP client with a single-binary server (`go:embed`)
 
 ## Requirements
 
@@ -78,6 +79,27 @@ go run ./cmd/ntpclient -compact -server time.google.com
 # List available servers
 go run ./cmd/ntpclient -list-servers
 ```
+
+### Web Server
+
+```bash
+# Start the web server (default :8080)
+go run ./cmd/ntpweb
+
+# Custom listen address
+go run ./cmd/ntpweb -addr :3000
+
+# Build a single self-contained binary
+go build -o ntpweb ./cmd/ntpweb
+./ntpweb
+```
+
+Then open [http://localhost:8080](http://localhost:8080) in your browser.
+
+The web server provides:
+- `GET /` — serves the embedded web UI
+- `GET /api/ntp?server=time.google.com&version=4` — returns NTP result as JSON
+- `GET /api/servers` — returns the list of default NTP servers
 
 ## Command-Line Options
 
@@ -157,19 +179,26 @@ python3 -m unittest src.test_ntpClient -v
 ### Go
 
 ```bash
-go test -v ./cmd/ntpclient/
+go test -v ./pkg/ntp/
 ```
 
 ## Building
 
-### Go Binary
+### Go CLI
 
 ```bash
 # Build for current platform
-go build -o ntpClient ./cmd/ntpclient
+go build -o ntpclient ./cmd/ntpclient
 
 # Build for Windows
-GOOS=windows GOARCH=amd64 go build -o ntpClient.exe ./cmd/ntpclient
+GOOS=windows GOARCH=amd64 go build -o ntpclient.exe ./cmd/ntpclient
+```
+
+### Go Web Server
+
+```bash
+# Build self-contained binary (static files embedded)
+go build -o ntpweb ./cmd/ntpweb
 ```
 
 ## License

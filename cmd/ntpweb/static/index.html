@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NTP Tools — Web Client</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-hover: #222632;
+      --border: #2a2e3a;
+      --text: #e4e6eb;
+      --text-muted: #8b8fa3;
+      --accent: #4f8ff7;
+      --accent-hover: #3a7de6;
+      --green: #34d399;
+      --red: #f87171;
+      --yellow: #fbbf24;
+      --mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+
+    header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
+
+    header h1 span { color: var(--accent); }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .controls {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 0.35rem; }
+    .field.grow { flex: 1; min-width: 180px; }
+
+    .field label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .field select,
+    .field input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.6rem 0.75rem;
+      font-size: 0.875rem;
+      font-family: var(--mono);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .field select:focus,
+    .field input:focus {
+      border-color: var(--accent);
+    }
+
+    .field select { cursor: pointer; }
+
+    button.query-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.6rem 1.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    button.query-btn:hover { background: var(--accent-hover); }
+    button.query-btn:active { transform: scale(0.97); }
+    button.query-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .status.error { color: var(--red); }
+
+    .spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-bottom: 0.75rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-header .server-info {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .result-header .server-info .ip {
+      color: var(--text-muted);
+      font-weight: 400;
+      font-size: 0.8rem;
+    }
+
+    .result-header .time-badge {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.3rem 0.6rem;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--green);
+    }
+
+    .result-section {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-section:last-child { border-bottom: none; }
+
+    .result-section h3 {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem 1.5rem;
+    }
+
+    @media (max-width: 600px) {
+      .result-grid { grid-template-columns: 1fr; }
+    }
+
+    .result-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 0.3rem 0;
+    }
+
+    .result-item .label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .result-item .value {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      text-align: right;
+    }
+
+    .result-item .value.highlight { color: var(--accent); font-weight: 600; }
+    .result-item .value.green { color: var(--green); }
+    .result-item .value.yellow { color: var(--yellow); }
+
+    .timestamps-table {
+      width: 100%;
+      font-size: 0.8rem;
+    }
+
+    .timestamps-table .ts-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .timestamps-table .ts-row:last-child { border-bottom: none; }
+
+    .timestamps-table .ts-label {
+      color: var(--text-muted);
+    }
+
+    .timestamps-table .ts-value {
+      font-family: var(--mono);
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem 0;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⏱ NTP <span>Tools</span></h1>
+      <p>Query NTP servers and inspect timing data — RFC 2030</p>
+    </header>
+
+    <div class="controls">
+      <div class="controls-row">
+        <div class="field grow">
+          <label for="server">Server</label>
+          <select id="server"></select>
+        </div>
+        <div class="field">
+          <label for="custom-server">Custom</label>
+          <input type="text" id="custom-server" placeholder="hostname or IP">
+        </div>
+        <div class="field">
+          <label for="version">Version</label>
+          <select id="version">
+            <option value="4" selected>NTPv4</option>
+            <option value="3">NTPv3</option>
+          </select>
+        </div>
+        <button class="query-btn" id="query-btn">Query</button>
+      </div>
+    </div>
+
+    <div id="output">
+      <div class="status">Select an NTP server and click <strong>Query</strong> to begin.</div>
+    </div>
+
+    <footer>
+      NTP Tools — <a href="https://github.com/jpmieville/ntpTools" target="_blank">GitHub</a>
+    </footer>
+  </div>
+
+  <script>
+    const serverSelect = document.getElementById('server');
+    const customInput = document.getElementById('custom-server');
+    const versionSelect = document.getElementById('version');
+    const queryBtn = document.getElementById('query-btn');
+    const output = document.getElementById('output');
+
+    async function loadServers() {
+      try {
+        const resp = await fetch('/api/servers');
+        const servers = await resp.json();
+        servers.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s;
+          opt.textContent = s;
+          serverSelect.appendChild(opt);
+        });
+      } catch (e) {
+        console.error('Failed to load servers:', e);
+      }
+    }
+
+    function getServer() {
+      const custom = customInput.value.trim();
+      return custom || serverSelect.value;
+    }
+
+    function showLoading() {
+      output.innerHTML = `
+        <div class="status">
+          <div class="spinner"></div>
+          <div>Querying <strong>${escapeHtml(getServer())}</strong>…</div>
+        </div>`;
+    }
+
+    function showError(msg) {
+      output.innerHTML = `<div class="status error">⚠ ${escapeHtml(msg)}</div>`;
+    }
+
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function fmtTimestamp(ts) {
+      return ts.toFixed(5);
+    }
+
+    function fmtUTC(receiveTime) {
+      const d = new Date(receiveTime * 1000);
+      return d.toUTCString();
+    }
+
+    function fmtOffset(seconds) {
+      const abs = Math.abs(seconds);
+      if (abs < 0.001) return (seconds * 1e6).toFixed(1) + ' µs';
+      if (abs < 1) return (seconds * 1000).toFixed(3) + ' ms';
+      return seconds.toFixed(5) + ' s';
+    }
+
+    function fmtDelay(seconds) {
+      if (seconds < 0.001) return (seconds * 1e6).toFixed(1) + ' µs';
+      if (seconds < 1) return (seconds * 1000).toFixed(3) + ' ms';
+      return seconds.toFixed(5) + ' s';
+    }
+
+    function renderResult(r) {
+      const liText = { 0: 'no warning', 1: '61s last min', 2: '59s last min', 3: 'alarm' };
+      const modeText = { 0: 'reserved', 1: 'sym active', 2: 'sym passive', 3: 'client', 4: 'server', 5: 'broadcast', 6: 'control', 7: 'private' };
+      const stratumText = { 0: 'unspecified', 1: 'primary ref', 2: 'secondary ref', 16: 'reserved' };
+
+      const byte1 = (r.leap_indicator << 6) | (r.version << 3) | r.mode;
+
+      output.innerHTML = `
+        <div class="result-card">
+          <div class="result-header">
+            <div class="server-info">
+              ${escapeHtml(r.server)}
+              <span class="ip">${escapeHtml(r.address.ip)}:${r.address.port}</span>
+            </div>
+            <div class="time-badge">${escapeHtml(fmtUTC(r.receive_time))}</div>
+          </div>
+
+          <div class="result-section">
+            <h3>NTP Header</h3>
+            <div class="result-grid">
+              <div class="result-item">
+                <span class="label">Byte 1</span>
+                <span class="value">0x${byte1.toString(16).toUpperCase().padStart(2, '0')}</span>
+              </div>
+              <div class="result-item">
+                <span class="label">Leap Indicator</span>
+                <span class="value">${r.leap_indicator} — ${liText[r.leap_indicator] || 'unknown'}</span>
+              </div>
+              <div class="result-item">
+                <span class="label">Version</span>
+                <span class="value highlight">${r.version}</span>
+              </div>
+              <div class="result-item">
+                <span class="label">Mode</span>
+                <span class="value">${r.mode} — ${modeText[r.mode] || 'unknown'}</span>
+              </div>
+              <div class="result-item">
+                <span class="label">Stratum</span>
+                <span class="value">${r.stratum} — ${stratumText[r.stratum] || 'secondary ref'}</span>
+              </div>
+              <div class="result-item">
+                <span class="label">Poll Interval</span>
+                <span class="value">${r.poll}</span>
+              </div>
+              <div class="result-item">
+                <span class="label">Precision</span>
+                <span class="value">2^${r.precision} ≈ ${Math.pow(2, r.precision).toExponential(3)}</span>
+              </div>
+              <div class="result-item">
+                <span class="label">Reference ID</span>
+                <span class="value highlight">${escapeHtml(r.reference_id)}</span>
+              </div>
+              <div class="result-item">
+                <span class="label">Root Delay</span>
+                <span class="value">${(r.root_delay / 65536).toFixed(5)}</span>
+              </div>
+              <div class="result-item">
+                <span class="label">Root Dispersion</span>
+                <span class="value">${(r.root_dispersion / 65536).toFixed(5)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-section">
+            <h3>Timestamps (Unix Epoch)</h3>
+            <div class="timestamps-table">
+              <div class="ts-row">
+                <span class="ts-label">Reference</span>
+                <span class="ts-value">${fmtTimestamp(r.reference_time)}</span>
+              </div>
+              <div class="ts-row">
+                <span class="ts-label">Originate (T1)</span>
+                <span class="ts-value">${fmtTimestamp(r.originate_time)}</span>
+              </div>
+              <div class="ts-row">
+                <span class="ts-label">Receive (T2)</span>
+                <span class="ts-value">${fmtTimestamp(r.receive_time)}</span>
+              </div>
+              <div class="ts-row">
+                <span class="ts-label">Transmit (T3)</span>
+                <span class="ts-value">${fmtTimestamp(r.transmit_time)}</span>
+              </div>
+              <div class="ts-row">
+                <span class="ts-label">Destination (T4)</span>
+                <span class="ts-value">${fmtTimestamp(r.destination_time)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="result-section">
+            <h3>Computed Results</h3>
+            <div class="result-grid">
+              <div class="result-item">
+                <span class="label">Clock Offset</span>
+                <span class="value green">${fmtOffset(r.clock_offset)}</span>
+              </div>
+              <div class="result-item">
+                <span class="label">Roundtrip Delay</span>
+                <span class="value yellow">${fmtDelay(r.roundtrip_delay)}</span>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    async function doQuery() {
+      const server = getServer();
+      if (!server) { showError('Please select or enter an NTP server.'); return; }
+
+      queryBtn.disabled = true;
+      showLoading();
+
+      try {
+        const version = versionSelect.value;
+        const resp = await fetch(`/api/ntp?server=${encodeURIComponent(server)}&version=${version}`);
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          showError(data.error || 'Unknown error');
+          return;
+        }
+
+        renderResult(data);
+      } catch (e) {
+        showError('Network error: ' + e.message);
+      } finally {
+        queryBtn.disabled = false;
+      }
+    }
+
+    queryBtn.addEventListener('click', doQuery);
+
+    customInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doQuery();
+    });
+
+    loadServers();
+  </script>
+</body>
+</html>

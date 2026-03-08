@@ -1,4 +1,4 @@
-package main
+package ntp
 
 import (
 	"bytes"
@@ -133,35 +133,35 @@ func TestInterpretReferenceID(t *testing.T) {
 	}{
 		{
 			name:    "stratum 1 GOOG",
-			refID:   0x474F4F47, // "GOOG"
+			refID:   0x474F4F47,
 			stratum: 1,
 			vn:      4,
 			want:    "GOOG",
 		},
 		{
 			name:    "stratum 1 GPS with null padding",
-			refID:   0x47505300, // "GPS\x00"
+			refID:   0x47505300,
 			stratum: 1,
 			vn:      4,
 			want:    "GPS",
 		},
 		{
 			name:    "stratum 1 PPS",
-			refID:   0x50505300, // "PPS\x00"
+			refID:   0x50505300,
 			stratum: 1,
 			vn:      3,
 			want:    "PPS",
 		},
 		{
 			name:    "stratum 2 vn 3 returns IPv4",
-			refID:   0xC0A80001, // 192.168.0.1
+			refID:   0xC0A80001,
 			stratum: 2,
 			vn:      3,
 			want:    "IPv4 address: 192.168.0.1",
 		},
 		{
 			name:    "stratum 2 vn 3 loopback",
-			refID:   0x7F000001, // 127.0.0.1
+			refID:   0x7F000001,
 			stratum: 2,
 			vn:      3,
 			want:    "IPv4 address: 127.0.0.1",
@@ -232,13 +232,13 @@ func TestConvertNTPTime(t *testing.T) {
 		{
 			name: "half-second fraction",
 			sec:  2208988800,
-			frac: 1 << 31, // 0.5 in NTP fractional
+			frac: 1 << 31,
 			want: 0.5,
 		},
 		{
 			name: "quarter-second fraction",
 			sec:  2208988800,
-			frac: 1 << 30, // 0.25 in NTP fractional
+			frac: 1 << 30,
 			want: 0.25,
 		},
 		{
@@ -282,7 +282,7 @@ func TestUnixFloat64(t *testing.T) {
 		},
 		{
 			name: "with nanoseconds",
-			time: time.Unix(1000, 500000000), // 1000.5 seconds
+			time: time.Unix(1000, 500000000),
 			want: 1000.5,
 		},
 		{
@@ -292,7 +292,7 @@ func TestUnixFloat64(t *testing.T) {
 		},
 		{
 			name: "fractional nanoseconds",
-			time: time.Unix(100, 250000000), // 100.25 seconds
+			time: time.Unix(100, 250000000),
 			want: 100.25,
 		},
 	}
@@ -320,19 +320,19 @@ func TestCreateNTPRequest(t *testing.T) {
 			name:        "version 3 request",
 			version:     3,
 			wantLen:     48,
-			wantLiVnMod: 0x1B, // LI=0, VN=3, Mode=3
+			wantLiVnMod: 0x1B,
 		},
 		{
 			name:        "version 4 request",
 			version:     4,
 			wantLen:     48,
-			wantLiVnMod: 0x23, // LI=0, VN=4, Mode=3
+			wantLiVnMod: 0x23,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			client := NewNTPClient("localhost", tc.version, 5*time.Second)
+			client := NewClient("localhost", tc.version, 5*time.Second)
 			packet := client.createNTPRequest()
 
 			if len(packet) != tc.wantLen {
@@ -343,7 +343,6 @@ func TestCreateNTPRequest(t *testing.T) {
 				t.Errorf("LiVnMode byte = 0x%02X, want 0x%02X", packet[0], tc.wantLiVnMod)
 			}
 
-			// Verify remaining bytes are zero
 			for i := 1; i < len(packet); i++ {
 				if packet[i] != 0 {
 					t.Errorf("byte[%d] = 0x%02X, want 0x00", i, packet[i])
@@ -354,7 +353,7 @@ func TestCreateNTPRequest(t *testing.T) {
 }
 
 func TestCreateNTPRequest_DecodesCorrectly(t *testing.T) {
-	client := NewNTPClient("time.google.com", 4, 10*time.Second)
+	client := NewClient("time.google.com", 4, 10*time.Second)
 	packet := client.createNTPRequest()
 
 	li, vn, mode := decodeFirstByte(packet[0])
@@ -371,7 +370,6 @@ func TestCreateNTPRequest_DecodesCorrectly(t *testing.T) {
 
 // ─── parseResponse ──────────────────────────────────────────────────────────
 
-// buildNTPResponsePacket constructs a synthetic 48-byte NTP response packet.
 func buildNTPResponsePacket(
 	liVnMode uint8,
 	stratum uint8,
@@ -410,35 +408,31 @@ func buildNTPResponsePacket(
 func TestParseResponse_BasicServerReply(t *testing.T) {
 	const epsilon = 1e-6
 
-	// Simulate a stratum-1 NTPv4 server response
-	// LI=0, VN=4, Mode=4 => 0x24
 	liVnMode := uint8(0x24)
 	stratum := uint8(1)
 	poll := int8(4)
 	precision := int8(-18)
 	rootDelay := uint32(0)
-	rootDisp := uint32(0x00000100) // small dispersion
-	referenceID := uint32(0x474F4F47) // "GOOG"
+	rootDisp := uint32(0x00000100)
+	referenceID := uint32(0x474F4F47)
 
-	// Use a known NTP time: Unix 1700000000 => NTP sec = 1700000000 + 2208988800
 	ntpSec := uint32(1700000000 + 2208988800)
 	ntpFrac := uint32(0)
 
 	data := buildNTPResponsePacket(
 		liVnMode, stratum, poll, precision,
 		rootDelay, rootDisp, referenceID,
-		ntpSec, ntpFrac, // refTime
-		ntpSec, ntpFrac, // origTime (echoed from client — server sets this)
-		ntpSec, ntpFrac, // recvTime
-		ntpSec, ntpFrac, // xmitTime
+		ntpSec, ntpFrac,
+		ntpSec, ntpFrac,
+		ntpSec, ntpFrac,
+		ntpSec, ntpFrac,
 	)
 
-	// Verify packet is 48 bytes
 	if len(data) != 48 {
 		t.Fatalf("packet length = %d, want 48", len(data))
 	}
 
-	client := NewNTPClient("time.google.com", 4, 10*time.Second)
+	client := NewClient("time.google.com", 4, 10*time.Second)
 
 	addr := &net.UDPAddr{
 		IP:   net.ParseIP("216.239.35.0"),
@@ -446,14 +440,13 @@ func TestParseResponse_BasicServerReply(t *testing.T) {
 	}
 
 	originateTime := time.Unix(1700000000, 0)
-	destinationTime := time.Unix(1700000000, 100000000) // 0.1s later
+	destinationTime := time.Unix(1700000000, 100000000)
 
 	result, err := client.parseResponse(data, addr, originateTime, destinationTime)
 	if err != nil {
 		t.Fatalf("parseResponse returned error: %v", err)
 	}
 
-	// Verify header fields
 	if result.Server != "time.google.com" {
 		t.Errorf("Server = %q, want %q", result.Server, "time.google.com")
 	}
@@ -491,7 +484,6 @@ func TestParseResponse_BasicServerReply(t *testing.T) {
 		t.Errorf("ReferenceID = %q, want %q", result.ReferenceID, "GOOG")
 	}
 
-	// Verify times
 	wantRefTime := 1700000000.0
 	if math.Abs(result.ReferenceTime-wantRefTime) > epsilon {
 		t.Errorf("ReferenceTime = %f, want %f", result.ReferenceTime, wantRefTime)
@@ -503,7 +495,6 @@ func TestParseResponse_BasicServerReply(t *testing.T) {
 		t.Errorf("TransmitTime = %f, want %f", result.TransmitTime, wantRefTime)
 	}
 
-	// OriginateTime comes from the passed-in time.Time, not the packet
 	wantOriginateTime := 1700000000.0
 	if math.Abs(result.OriginateTime-wantOriginateTime) > epsilon {
 		t.Errorf("OriginateTime = %f, want %f", result.OriginateTime, wantOriginateTime)
@@ -518,18 +509,6 @@ func TestParseResponse_BasicServerReply(t *testing.T) {
 func TestParseResponse_ClockOffsetAndRoundtrip(t *testing.T) {
 	const epsilon = 1e-6
 
-	// Use fractional values that are exact in binary (powers of 2) to avoid
-	// truncation errors when encoding NTP fractional seconds.
-	//
-	// T1 (originateTime)  = 1000.0    [client sends request]
-	// T2 (receiveTime)    = 1000.25   [server receives request]
-	// T3 (transmitTime)   = 1000.5    [server sends reply]
-	// T4 (destinationTime)= 1000.75   [client receives reply]
-	//
-	// Code formula:
-	//   offset = ((T2-T1) + (T3-T4)) / 2 = ((0.25) + (-0.25)) / 2 = 0.0
-	//   delay  = (T4-T1) - (T2-T3) = 0.75 - (0.25-0.5) = 0.75 - (-0.25) = 1.0
-
 	baseSec := uint32(1000 + time1970)
 
 	ntpT2Sec := baseSec
@@ -540,38 +519,34 @@ func TestParseResponse_ClockOffsetAndRoundtrip(t *testing.T) {
 	data := buildNTPResponsePacket(
 		0x24, 1, 4, -20,
 		0, 0, 0x474F4F47,
-		ntpT2Sec, ntpT2Frac, // refTime (use T2)
-		0, 0, // orig time in packet (not used by parseResponse for offset calc)
-		ntpT2Sec, ntpT2Frac, // recvTime = T2
-		ntpT3Sec, ntpT3Frac, // xmitTime = T3
+		ntpT2Sec, ntpT2Frac,
+		0, 0,
+		ntpT2Sec, ntpT2Frac,
+		ntpT3Sec, ntpT3Frac,
 	)
 
-	client := NewNTPClient("ntp.example.com", 4, 10*time.Second)
+	client := NewClient("ntp.example.com", 4, 10*time.Second)
 	addr := &net.UDPAddr{IP: net.ParseIP("10.0.0.1"), Port: 123}
 
-	originateTime := time.Unix(1000, 0)          // T1 = 1000.0
-	destinationTime := time.Unix(1000, 750000000) // T4 = 1000.75
+	originateTime := time.Unix(1000, 0)
+	destinationTime := time.Unix(1000, 750000000)
 
 	result, err := client.parseResponse(data, addr, originateTime, destinationTime)
 	if err != nil {
 		t.Fatalf("parseResponse returned error: %v", err)
 	}
 
-	// Expected offset = ((T2-T1) + (T3-T4)) / 2 = 0.0
 	if math.Abs(result.ClockOffset-0.0) > epsilon {
 		t.Errorf("ClockOffset = %f, want ~0.0", result.ClockOffset)
 	}
 
-	// Expected delay = (T4-T1) - (T2-T3) = 0.75 - (-0.25) = 1.0
 	if math.Abs(result.RoundtripDelay-1.0) > epsilon {
 		t.Errorf("RoundtripDelay = %f, want ~1.0", result.RoundtripDelay)
 	}
 }
 
 func TestParseResponse_Stratum2Version3_IPv4RefID(t *testing.T) {
-	// Stratum 2 with NTPv3 should show IPv4 reference ID
-	// LI=0, VN=3, Mode=4 => (0<<6)|(3<<3)|4 = 0x1C
-	refID := uint32(0xC0A80101) // 192.168.1.1
+	refID := uint32(0xC0A80101)
 
 	ntpSec := uint32(1700000000 + 2208988800)
 
@@ -584,7 +559,7 @@ func TestParseResponse_Stratum2Version3_IPv4RefID(t *testing.T) {
 		ntpSec, 0,
 	)
 
-	client := NewNTPClient("pool.ntp.org", 3, 10*time.Second)
+	client := NewClient("pool.ntp.org", 3, 10*time.Second)
 	addr := &net.UDPAddr{IP: net.ParseIP("192.168.1.1"), Port: 123}
 
 	now := time.Unix(1700000000, 0)
@@ -611,8 +586,6 @@ func TestParseResponse_Stratum2Version3_IPv4RefID(t *testing.T) {
 }
 
 func TestParseResponse_Stratum2Version4_HexRefID(t *testing.T) {
-	// Stratum 2 with NTPv4 should show hex reference ID
-	// LI=0, VN=4, Mode=4 => 0x24
 	refID := uint32(0xABCD1234)
 
 	ntpSec := uint32(1700000000 + 2208988800)
@@ -626,7 +599,7 @@ func TestParseResponse_Stratum2Version4_HexRefID(t *testing.T) {
 		ntpSec, 0,
 	)
 
-	client := NewNTPClient("time.cloudflare.com", 4, 10*time.Second)
+	client := NewClient("time.cloudflare.com", 4, 10*time.Second)
 	addr := &net.UDPAddr{IP: net.ParseIP("162.159.200.1"), Port: 123}
 
 	now := time.Unix(1700000000, 0)
@@ -649,20 +622,19 @@ func TestParseResponse_Stratum2Version4_HexRefID(t *testing.T) {
 func TestParseResponse_FractionalTimestamps(t *testing.T) {
 	const epsilon = 1e-6
 
-	// Test that fractional NTP timestamps are decoded correctly
 	ntpSec := uint32(2208988800 + 1700000000)
-	halfSecFrac := uint32(1 << 31) // 0.5 seconds
+	halfSecFrac := uint32(1 << 31)
 
 	data := buildNTPResponsePacket(
 		0x24, 1, 4, -18,
 		0, 0, 0x474F4F47,
-		ntpSec, halfSecFrac, // refTime = 1700000000.5
+		ntpSec, halfSecFrac,
 		ntpSec, 0,
-		ntpSec, halfSecFrac, // recvTime = 1700000000.5
-		ntpSec, halfSecFrac, // xmitTime = 1700000000.5
+		ntpSec, halfSecFrac,
+		ntpSec, halfSecFrac,
 	)
 
-	client := NewNTPClient("time.google.com", 4, 10*time.Second)
+	client := NewClient("time.google.com", 4, 10*time.Second)
 	addr := &net.UDPAddr{IP: net.ParseIP("216.239.35.0"), Port: 123}
 
 	now := time.Unix(1700000000, 0)
@@ -684,20 +656,20 @@ func TestParseResponse_FractionalTimestamps(t *testing.T) {
 }
 
 func TestParseResponse_TooShortPacket(t *testing.T) {
-	client := NewNTPClient("localhost", 4, 5*time.Second)
+	client := NewClient("localhost", 4, 5*time.Second)
 	addr := &net.UDPAddr{IP: net.ParseIP("127.0.0.1"), Port: 123}
 	now := time.Now()
 
-	shortData := make([]byte, 10) // too short
+	shortData := make([]byte, 10)
 	_, err := client.parseResponse(shortData, addr, now, now)
 	if err == nil {
 		t.Error("expected error for short packet, got nil")
 	}
 }
 
-// ─── NewNTPClient ───────────────────────────────────────────────────────────
+// ─── NewClient ──────────────────────────────────────────────────────────────
 
-func TestNewNTPClient(t *testing.T) {
+func TestNewClient(t *testing.T) {
 	tests := []struct {
 		name    string
 		server  string
@@ -720,9 +692,9 @@ func TestNewNTPClient(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			client := NewNTPClient(tc.server, tc.version, tc.timeout)
+			client := NewClient(tc.server, tc.version, tc.timeout)
 			if client == nil {
-				t.Fatal("NewNTPClient returned nil")
+				t.Fatal("NewClient returned nil")
 			}
 			if client.server != tc.server {
 				t.Errorf("server = %q, want %q", client.server, tc.server)
