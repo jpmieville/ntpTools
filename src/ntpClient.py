@@ -18,6 +18,7 @@ Improvements:
 """
 
 import argparse
+import json
 import socket
 import struct
 import sys
@@ -304,6 +305,12 @@ Examples:
         help="List available default NTP servers"
     )
 
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output result as JSON"
+    )
+
     return parser.parse_args()
 
 
@@ -327,7 +334,15 @@ def main() -> int:
     result = client.fetch_time()
 
     if result:
-        client.print_result(result)
+        if args.json:
+            json_result = dict(result)
+            json_result["address"] = {
+                "ip": result["address"][0],
+                "port": result["address"][1],
+            }
+            print(json.dumps(json_result, indent=2))
+        else:
+            client.print_result(result)
         return 0
     else:
         return 1

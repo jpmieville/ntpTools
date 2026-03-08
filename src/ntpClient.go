@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"math"
@@ -39,24 +40,24 @@ type ntpPacket struct {
 
 // NTPResult holds the parsed and computed results of an NTP query.
 type NTPResult struct {
-	Server          string
-	Address         string
-	LeapIndicator   uint8
-	Version         uint8
-	Mode            uint8
-	Stratum         uint8
-	Poll            int8
-	Precision       int8
-	RootDelay       uint32
-	RootDispersion  uint32
-	ReferenceID     string
-	ReferenceTime   float64
-	OriginateTime   float64
-	ReceiveTime     float64
-	TransmitTime    float64
-	DestinationTime float64
-	ClockOffset     float64
-	RoundtripDelay  float64
+	Server          string  `json:"server"`
+	Address         string  `json:"address"`
+	LeapIndicator   uint8   `json:"leap_indicator"`
+	Version         uint8   `json:"version"`
+	Mode            uint8   `json:"mode"`
+	Stratum         uint8   `json:"stratum"`
+	Poll            int8    `json:"poll"`
+	Precision       int8    `json:"precision"`
+	RootDelay       uint32  `json:"root_delay"`
+	RootDispersion  uint32  `json:"root_dispersion"`
+	ReferenceID     string  `json:"reference_id"`
+	ReferenceTime   float64 `json:"reference_time"`
+	OriginateTime   float64 `json:"originate_time"`
+	ReceiveTime     float64 `json:"receive_time"`
+	TransmitTime    float64 `json:"transmit_time"`
+	DestinationTime float64 `json:"destination_time"`
+	ClockOffset     float64 `json:"clock_offset"`
+	RoundtripDelay  float64 `json:"roundtrip_delay"`
 }
 
 // NTPClient represents an SNTP client.
@@ -328,6 +329,7 @@ func main() {
 	version := flag.Uint("version", 4, "NTP version (3 or 4)")
 	timeout := flag.Duration("timeout", ntpTimeout, "Socket timeout")
 	listServers := flag.Bool("list-servers", false, "List available default NTP servers")
+	jsonOutput := flag.Bool("json", false, "Output result as JSON")
 	flag.BoolVar(&verbose, "verbose", false, "Enable verbose debug output")
 	flag.Parse()
 
@@ -347,5 +349,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	client.PrintResult(result)
+	if *jsonOutput {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		if err := enc.Encode(result); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		client.PrintResult(result)
+	}
 }
